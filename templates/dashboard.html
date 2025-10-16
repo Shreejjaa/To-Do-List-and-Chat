@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Dashboard</h2>
+        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm">Logout</a>
+    </div>
+
+    
+    {% if current_user.role == 'manager' %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Create New Group</h5>
+            <form method="post" action="{{ url_for('dashboard') }}" class="d-flex gap-2 flex-wrap">
+                <input type="text" name="group_name" placeholder="Group Name" class="form-control flex-grow-1" required>
+                <button type="submit" class="btn btn-primary">Create</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-secondary mb-3">Your Groups</h5>
+                    {% if groups %}
+                    <ul class="list-group list-group-flush">
+                        {% for g in groups %}
+                        <li class="list-group-item d-flex flex-column gap-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{{ url_for('group_page', group_id=g.id) }}" class="fw-bold text-decoration-none text-dark">{{ g.name }}</a>
+
+                                
+                                {% set member_ids = g.members|map(attribute='id')|list %}
+                                {% if current_user.id not in member_ids %}
+                                <form method="post" action="{{ url_for('join_group', group_id=g.id) }}">
+                                    <button class="btn btn-sm btn-outline-primary">Join</button>
+                                </form>
+                                {% else %}
+                                <span class="badge bg-success">Member</span>
+                                {% endif %}
+                            </div>
+
+                            
+                            {% if current_user.role == 'manager' %}
+                            <form method="post" action="{{ url_for('add_user', group_id=g.id) }}" class="d-flex gap-2 flex-wrap mt-1">
+                                <select name="user_id" class="form-select form-select-sm flex-grow-1">
+                                    {% for u in users %}
+                                        {% if u.id not in member_ids %}
+                                        <option value="{{ u.id }}">{{ u.username }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-success">Add User</button>
+                            </form>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">No groups available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-secondary mb-3">All Users</h5>
+                    {% if users %}
+                    <div class="row row-cols-1 row-cols-md-2 g-3">
+                        {% for u in users %}
+                        <div class="col">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">{{ u.username }}</h6>
+                                        <small class="text-muted">{{ u.role }}</small>
+                                    </div>
+                                    {% if current_user.role == 'manager' %}
+                                    <form method="post" action="{{ url_for('add_user', group_id=groups[0].id if groups else 0) }}">
+                                        <input type="hidden" name="user_id" value="{{ u.id }}">
+                                        <button class="btn btn-sm btn-outline-success">Add</button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No users found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
